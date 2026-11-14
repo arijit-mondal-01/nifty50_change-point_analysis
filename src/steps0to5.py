@@ -28,6 +28,9 @@ from statsmodels.tools.sm_exceptions import ConvergenceWarning
 
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 warnings.filterwarnings("ignore", category=UserWarning, module="statsmodels")
+# Always run from the src folder, whichever way the script is launched
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+os.makedirs("results", exist_ok=True)
 
 SEED = 42
 np.random.seed(SEED)
@@ -238,7 +241,7 @@ best_bic_row = valid.loc[valid["bic"].idxmin()]
 print("\nTop 5 by AIC:")
 print(valid.nsmallest(5, "aic")[["p", "d", "q", "aic", "bic"]].to_string(index=False))
 
-best_order = (int(best_aic_row["p"]), int(best_aic_row["d"]), int(best_aic_row["q"]))
+best_order = (int(best_bic_row["p"]), int(best_bic_row["d"]), int(best_bic_row["q"]))
 bic_order = (int(best_bic_row["p"]), int(best_bic_row["d"]), int(best_bic_row["q"]))
 
 print(f"\nBest by AIC: {best_order}")

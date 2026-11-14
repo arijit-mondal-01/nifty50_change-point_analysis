@@ -186,15 +186,24 @@ print("Final change points:", list(pelt_dates))
 # subsampling to weekly, or dropping this method and relying on the
 # permutation test in 6c for validation instead.
 
-import bayesian_changepoint_detection.offline_changepoint_detection as offcd
-from functools import partial
+# Compatibility shim: the bayesian-changepoint-detection package is
+# unmaintained and still calls scipy.misc.comb, which moved to
+# scipy.special.comb. Re-point it before importing.
+import scipy.misc
+import scipy.special
+if not hasattr(scipy.misc, "comb"):
+    scipy.misc.comb = scipy.special.comb
+if not hasattr(scipy.misc, "logsumexp"):
+    scipy.misc.logsumexp = scipy.special.logsumexp
+    import bayesian_changepoint_detection.offline_changepoint_detection as offcd
+import functools
 from scipy.signal import find_peaks
 
 bayes_input = standardise(final_resid ** 2)
 
 Q, P, Pcp = offcd.offline_changepoint_detection(
     bayes_input,
-    partial(offcd.const_prior, l=(len(bayes_input) + 1)),
+    functools.partial(offcd.const_prior, l=(len(bayes_input) + 1)),
     offcd.gaussian_obs_log_likelihood,
     truncate=-40,
 )
@@ -489,3 +498,8 @@ plt.tight_layout()
 plt.show()
 
 print("\nRe-run Steps 6-8 with PENALTY = BEST_PENALTY for final results.")
+# ── DIAGNOSTIC: why is March 2020 missing? ──
+print("\nPenalty sweep:")
+for pen in [0.5, 1, 2, 3, 5, 10]:
+    cps, _ = detect(final_resid ** 2, pen)
+    print(pen, [str(d.date()) for d in residual_dates[cps]])
